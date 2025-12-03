@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
   # Location Tracker App
 
@@ -9,3 +10,6 @@
 
   Run `npm run dev` to start the development server.
   
+=======
+# location-tracker
+>>>>>>> f65fc862b48dcb8dfd37c2b8108ace61a6a1d27d
