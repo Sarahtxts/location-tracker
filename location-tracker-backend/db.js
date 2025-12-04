@@ -5,8 +5,8 @@ const dbPath = path.join(__dirname, 'locationTracker.db');
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-  // Users table (createdAt will be inserted by backend in IST)
-  db.run(`
+    // Users table (createdAt will be inserted by backend in IST)
+    db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -20,8 +20,8 @@ db.serialize(() => {
     )
   `);
 
-  // Visits table with map links (all audit times as TEXT for IST)
-  db.run(`
+    // Visits table with map links (all audit times as TEXT for IST)
+    db.run(`
     CREATE TABLE IF NOT EXISTS visits (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       userName TEXT NOT NULL,
@@ -29,17 +29,17 @@ db.serialize(() => {
       companyName TEXT,
       checkInAddress TEXT,
       checkInMapLink TEXT,
-      checkInTime TEXT,          -- changed from INTEGER to TEXT
-      checkOutTime TEXT,         -- changed from INTEGER to TEXT
+      checkInTime TEXT,
+      checkOutTime TEXT,
       checkOutAddress TEXT,
       checkOutMapLink TEXT,
       locationMismatch INTEGER DEFAULT 0,
-      createdAt TEXT             -- changed from DEFAULT CURRENT_TIMESTAMP to TEXT
+      createdAt TEXT
     )
   `);
 
-  // Clients table (createdAt as TEXT for IST)
-  db.run(`
+    // Clients table (createdAt as TEXT for IST)
+    db.run(`
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -49,15 +49,15 @@ db.serialize(() => {
     )
   `);
 
-  // Settings table (unchanged)
-  db.run(`
+    // Settings table (unchanged)
+    db.run(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     )
   `);
 
-  console.log('✅ Database initialized');
+    console.log('✅ Database initialized (SQLite)');
 });
 
 module.exports = db;

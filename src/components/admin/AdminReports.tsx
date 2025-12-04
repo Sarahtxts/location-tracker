@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Mail, MapPin, Clock, Filter, Search } from 'lucide-react';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 // Robust date/time conversion helper
 function getDateNum(val: string | number | null | undefined) {

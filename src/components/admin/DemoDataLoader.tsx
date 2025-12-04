@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Database, Trash2, Users } from 'lucide-react';
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 interface DemoDataLoaderProps {
   onDataLoaded: () => void;

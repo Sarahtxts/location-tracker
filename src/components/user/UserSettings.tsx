@@ -4,7 +4,7 @@ import {
   Smartphone, Lock, CheckCircle, Eye, EyeOff, Mail
 } from 'lucide-react';
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 interface UserSettingsProps {
   userName: string;

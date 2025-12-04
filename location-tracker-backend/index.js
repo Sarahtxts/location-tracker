@@ -53,7 +53,7 @@ function makeRequest(urlString) {
   return new Promise((resolve, reject) => {
     const urlObj = url.parse(urlString);
     const protocol = urlObj.protocol === 'https:' ? https : http;
-    
+
     protocol.get(urlObj, (res) => {
       let data = '';
       res.on('data', (chunk) => data += chunk);
@@ -84,11 +84,11 @@ app.get('/api/geocode', async (req, res) => {
     console.log(`[GEOCODE] Reverse geocoding: lat=${lat}, lng=${lng}`);
     const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
     console.log(`[GEOCODE] Calling Google Maps API...`);
-    
+
     const data = await makeRequest(googleUrl);
-    
+
     console.log(`[GEOCODE] API response status: ${data.status}`);
-    
+
     if (data.status === 'OK' && data.results && data.results.length > 0) {
       const address = data.results[0].formatted_address;
       console.log(`[GEOCODE] ✓ Address found: ${address}`);
@@ -98,7 +98,12 @@ app.get('/api/geocode', async (req, res) => {
       if (data.error_message) {
         console.warn(`[GEOCODE] Error Message: ${data.error_message}`);
       }
-      res.status(404).json({ error: `No address found. Status: ${data.status}` });
+      // Return the error to the client so we can see it in the app
+      return res.status(400).json({
+        error: 'Geocoding failed',
+        details: data.status,
+        message: data.error_message
+      });
     }
   } catch (error) {
     console.error(`[GEOCODE] ✗ Error: ${error.message}`);
@@ -162,7 +167,7 @@ app.post('/api/user/update', (req, res) => {
       password = excluded.password,
       reportingManagerEmail = excluded.reportingManagerEmail,
       profilePic = excluded.profilePic
-  `, [name, role, phoneNumber, password, reportingManagerEmail, profilePic, istNow], function(err) {
+  `, [name, role, phoneNumber, password, reportingManagerEmail, profilePic, istNow], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, userId: this.lastID });
   });
@@ -170,7 +175,7 @@ app.post('/api/user/update', (req, res) => {
 
 app.post('/api/user/delete', (req, res) => {
   const { userName } = req.body;
-  db.run('DELETE FROM users WHERE name = ?', [userName], function(err) {
+  db.run('DELETE FROM users WHERE name = ?', [userName], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     db.run('DELETE FROM visits WHERE userName = ?', [userName], (err) => {
       if (err) console.error('Error deleting visits:', err);
@@ -181,15 +186,15 @@ app.post('/api/user/delete', (req, res) => {
 
 app.post('/api/user/login', (req, res) => {
   const { name, role, password } = req.body;
-  db.get('SELECT * FROM users WHERE name = ? AND role = ? AND password = ?', 
+  db.get('SELECT * FROM users WHERE name = ? AND role = ? AND password = ?',
     [name, role, password], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (row) {
-      res.json({ success: true, user: row });
-    } else {
-      res.json({ success: false, message: 'Invalid credentials' });
-    }
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      if (row) {
+        res.json({ success: true, user: row });
+      } else {
+        res.json({ success: false, message: 'Invalid credentials' });
+      }
+    });
 });
 
 // ============ VISITS API ============
@@ -242,7 +247,7 @@ app.post('/api/visits/create', (req, res) => {
   db.run(`
     INSERT INTO visits (userName, clientName, companyName, checkInAddress, checkInMapLink, checkInTime, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [userName, clientName, companyName, checkInAddress, checkInMapLink, istNow, istNow], function(err) {
+  `, [userName, clientName, companyName, checkInAddress, checkInMapLink, istNow, istNow], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     db.run(`
       INSERT INTO clients (name, company, location, createdAt)
@@ -275,7 +280,7 @@ app.post('/api/visits/update', (req, res) => {
       checkOutMapLink = ?,
       locationMismatch = ?
     WHERE id = ?
-  `, [istNow, checkOutAddress, checkOutMapLink, locationMismatch ? 1 : 0, id], function(err) {
+  `, [istNow, checkOutAddress, checkOutMapLink, locationMismatch ? 1 : 0, id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
   });
@@ -283,7 +288,7 @@ app.post('/api/visits/update', (req, res) => {
 
 app.post('/api/visits/delete', (req, res) => {
   const { id } = req.body;
-  db.run('DELETE FROM visits WHERE id = ?', [id], function(err) {
+  db.run('DELETE FROM visits WHERE id = ?', [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
   });
@@ -303,7 +308,7 @@ app.post('/api/clients/create', (req, res) => {
   const istNow = getCurrentISTString();
   db.run(`
     INSERT INTO clients (name, company, location, createdAt) VALUES (?, ?, ?, ?)
-  `, [name, company, location, istNow], function(err) {
+  `, [name, company, location, istNow], function (err) {
     if (err) {
       if (err.message.includes('UNIQUE')) {
         return res.status(400).json({ error: 'Client already exists' });
@@ -316,7 +321,7 @@ app.post('/api/clients/create', (req, res) => {
 
 app.post('/api/clients/delete', (req, res) => {
   const { name } = req.body;
-  db.run('DELETE FROM clients WHERE name = ?', [name], function(err) {
+  db.run('DELETE FROM clients WHERE name = ?', [name], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
   });
@@ -336,7 +341,7 @@ app.post('/api/settings', (req, res) => {
   db.run(`
     INSERT INTO settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `, [key, value], function(err) {
+  `, [key, value], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
   });
@@ -362,7 +367,7 @@ app.post('/api/send-report', async (req, res) => {
     if (user) finalRecipientEmail = user.reportingManagerEmail;
   }
   if (!finalRecipientEmail) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: `No reporting manager email found for "${userName}".`
     });
   }
@@ -459,6 +464,6 @@ app.post('/api/send-report', async (req, res) => {
 
 const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend running on http://192.168.56.1:${PORT}`);
+  console.log(`🚀 Backend running on http://192.168.1.32:${PORT}`);
   console.log(`📊 Database: locationTracker.db`);
 });

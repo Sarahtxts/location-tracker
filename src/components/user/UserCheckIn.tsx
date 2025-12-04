@@ -4,7 +4,7 @@ import { LogIn, LogOut as LogOutIcon } from 'lucide-react';
 import type { Visit } from '../../App';
 import { MapView } from '../shared/MapView'; // Adjust path as needed
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 interface UserCheckInProps {
   userName: string;

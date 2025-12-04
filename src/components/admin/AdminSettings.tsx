@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Settings, MapPin, Save, CheckCircle, Clock, Bell } from 'lucide-react';
 import { DemoDataLoader } from './DemoDataLoader';
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 const PRESET_HOUR_MINUTES = [60, 120, 180, 240, 300];
 

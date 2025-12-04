@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Activity, AlertTriangle, X, MapPin, Clock } from 'lucide-react';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://10.41.149.42:5000';
+const API_URL = 'http://localhost:5000';
 
 // Robust duration function
 function formatDuration(visit: Visit) {
