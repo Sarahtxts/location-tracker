@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 const ExcelJS = require('exceljs');
-const db = require('./db');
+const db = require('./db-postgres');
 const https = require('https');
 const http = require('http');
 const url = require('url');
@@ -12,6 +12,50 @@ const app = express();
 
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
+
+// Helper: Map Postgres lowercase keys to camelCase
+const mapUser = (u) => {
+  if (!u) return null;
+  return {
+    id: u.id,
+    name: u.name,
+    role: u.role,
+    phoneNumber: u.phonenumber,
+    password: u.password,
+    reportingManagerEmail: u.reportingmanageremail,
+    profilePic: u.profilepic,
+    createdAt: u.createdat
+  };
+};
+
+const mapVisit = (v) => {
+  if (!v) return null;
+  return {
+    id: v.id,
+    userName: v.username,
+    clientName: v.clientname,
+    companyName: v.companyname,
+    checkInAddress: v.checkinaddress,
+    checkInMapLink: v.checkinmaplink,
+    checkInTime: v.checkintime,
+    checkOutTime: v.checkouttime,
+    checkOutAddress: v.checkoutaddress,
+    checkOutMapLink: v.checkoutmaplink,
+    locationMismatch: v.locationmismatch,
+    createdAt: v.createdat
+  };
+};
+
+const mapClient = (c) => {
+  if (!c) return null;
+  return {
+    id: c.id,
+    name: c.name,
+    company: c.company,
+    location: c.location,
+    createdAt: c.createdat
+  };
+};
 
 const transporter = nodemailer.createTransport({
   host: 'in-v3.mailjet.com',
@@ -68,8 +112,6 @@ function makeRequest(urlString) {
   });
 }
 
-// ============ GOOGLE MAPS GEOCODING API ============
-
 // Get address from lat/lng (reverse geocode)
 app.get('/api/geocode', async (req, res) => {
   const { lat, lng } = req.query;
@@ -83,11 +125,8 @@ app.get('/api/geocode', async (req, res) => {
     }
     console.log(`[GEOCODE] Reverse geocoding: lat=${lat}, lng=${lng}`);
     const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-    console.log(`[GEOCODE] Calling Google Maps API...`);
 
     const data = await makeRequest(googleUrl);
-
-    console.log(`[GEOCODE] API response status: ${data.status}`);
 
     if (data.status === 'OK' && data.results && data.results.length > 0) {
       const address = data.results[0].formatted_address;
@@ -95,10 +134,6 @@ app.get('/api/geocode', async (req, res) => {
       res.json({ address });
     } else {
       console.warn(`[GEOCODE] ✗ No address found. Status: ${data.status}`);
-      if (data.error_message) {
-        console.warn(`[GEOCODE] Error Message: ${data.error_message}`);
-      }
-      // Return the error to the client so we can see it in the app
       return res.status(400).json({
         error: 'Geocoding failed',
         details: data.status,
@@ -107,7 +142,6 @@ app.get('/api/geocode', async (req, res) => {
     }
   } catch (error) {
     console.error(`[GEOCODE] ✗ Error: ${error.message}`);
-    console.error(`[GEOCODE] Stack:`, error.stack);
     res.status(500).json({ error: `Geocoding failed: ${error.message}` });
   }
 });
@@ -137,214 +171,257 @@ app.get('/api/geocode-forward', async (req, res) => {
 
 // ============ USERS API ============
 
-app.get('/api/users', (req, res) => {
-  db.all('SELECT * FROM users', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+app.get('/api/users', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM users');
+    res.json(rows.map(mapUser));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/user/:userName', (req, res) => {
+app.get('/api/user/:userName', async (req, res) => {
   const { userName } = req.params;
-  db.get('SELECT * FROM users WHERE name = ?', [userName], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (row) {
-      res.json({ ...row, exists: true });
+  try {
+    const { rows } = await db.query('SELECT * FROM users WHERE name = $1', [userName]);
+    if (rows.length > 0) {
+      res.json({ ...mapUser(rows[0]), exists: true });
     } else {
       res.json({ exists: false });
     }
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/user/update', (req, res) => {
+app.post('/api/user/update', async (req, res) => {
   const { name, role, phoneNumber, password, reportingManagerEmail, profilePic } = req.body;
   const istNow = getCurrentISTString();
-  db.run(`
-    INSERT INTO users (name, role, phoneNumber, password, reportingManagerEmail, profilePic, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(name, role) DO UPDATE SET
-      phoneNumber = excluded.phoneNumber,
-      password = excluded.password,
-      reportingManagerEmail = excluded.reportingManagerEmail,
-      profilePic = excluded.profilePic
-  `, [name, role, phoneNumber, password, reportingManagerEmail, profilePic, istNow], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, userId: this.lastID });
-  });
+  try {
+    const result = await db.query(`
+      INSERT INTO users (name, role, phoneNumber, password, reportingManagerEmail, profilePic, createdAt)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT(name, role) DO UPDATE SET
+        phoneNumber = excluded.phoneNumber,
+        password = excluded.password,
+        reportingManagerEmail = excluded.reportingManagerEmail,
+        profilePic = excluded.profilePic
+      RETURNING id
+    `, [name, role, phoneNumber, password, reportingManagerEmail, profilePic, istNow]);
+
+    res.json({ success: true, userId: result.rows[0]?.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/user/delete', (req, res) => {
+app.post('/api/user/delete', async (req, res) => {
   const { userName } = req.body;
-  db.run('DELETE FROM users WHERE name = ?', [userName], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    db.run('DELETE FROM visits WHERE userName = ?', [userName], (err) => {
-      if (err) console.error('Error deleting visits:', err);
-    });
+  try {
+    await db.query('DELETE FROM users WHERE name = $1', [userName]);
+    await db.query('DELETE FROM visits WHERE userName = $1', [userName]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/user/login', (req, res) => {
+app.post('/api/user/login', async (req, res) => {
   const { name, role, password } = req.body;
-  db.get('SELECT * FROM users WHERE name = ? AND role = ? AND password = ?',
-    [name, role, password], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (row) {
-        res.json({ success: true, user: row });
-      } else {
-        res.json({ success: false, message: 'Invalid credentials' });
-      }
-    });
+  try {
+    const { rows } = await db.query('SELECT * FROM users WHERE name = $1 AND role = $2 AND password = $3',
+      [name, role, password]);
+    if (rows.length > 0) {
+      res.json({ success: true, user: mapUser(rows[0]) });
+    } else {
+      res.json({ success: false, message: 'Invalid credentials' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ============ VISITS API ============
 
-app.get('/api/visits', (req, res) => {
+app.get('/api/visits', async (req, res) => {
   const { userName, fromDate, toDate } = req.query;
   let query = 'SELECT * FROM visits WHERE 1=1';
   let params = [];
+  let paramCount = 1;
+
   if (userName && userName !== 'all') {
-    query += ' AND userName = ?';
+    query += ` AND userName = $${paramCount}`;
     params.push(userName);
+    paramCount++;
   }
   if (fromDate) {
-    query += ' AND checkInTime >= ?';
+    query += ` AND checkInTime >= $${paramCount}`;
     params.push(fromDate);
+    paramCount++;
   }
   if (toDate) {
-    query += ' AND checkInTime <= ?';
+    query += ` AND checkInTime <= $${paramCount}`;
     params.push(toDate + ' 23:59:59');
+    paramCount++;
   }
   query += ' ORDER BY checkInTime DESC';
-  db.all(query, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+
+  try {
+    const { rows } = await db.query(query, params);
+    res.json(rows.map(mapVisit));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/visits/pending-checkouts', (req, res) => {
-  db.get('SELECT value FROM settings WHERE key = ?', ['checkoutReminderHours'], (err, row) => {
-    const reminderHours = row ? parseInt(row.value) : 8;
+app.get('/api/visits/pending-checkouts', async (req, res) => {
+  try {
+    const settingRes = await db.query('SELECT value FROM settings WHERE key = $1', ['checkoutReminderHours']);
+    const reminderHours = settingRes.rows.length > 0 ? parseInt(settingRes.rows[0].value) : 8;
+
     let dt = new Date();
     dt.setHours(dt.getHours() - reminderHours);
     const istStr = getCurrentISTString();
-    db.all(`
+
+    const { rows } = await db.query(`
       SELECT * FROM visits 
       WHERE checkOutTime IS NULL 
-      AND checkInTime < ?
+      AND checkInTime < $1
       ORDER BY checkInTime ASC
-    `, [istStr], (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    });
-  });
+    `, [istStr]);
+
+    res.json(rows.map(mapVisit));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Check-in: Create new visit
-app.post('/api/visits/create', (req, res) => {
+app.post('/api/visits/create', async (req, res) => {
   const { userName, clientName, companyName, checkInAddress, checkInMapLink } = req.body;
   const istNow = getCurrentISTString();
-  db.run(`
-    INSERT INTO visits (userName, clientName, companyName, checkInAddress, checkInMapLink, checkInTime, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [userName, clientName, companyName, checkInAddress, checkInMapLink, istNow, istNow], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    db.run(`
-      INSERT INTO clients (name, company, location, createdAt)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(name) DO UPDATE SET
-        company = excluded.company,
-        location = excluded.location
-    `, [clientName, companyName, checkInAddress, istNow], (clientErr) => {
-      if (clientErr) {
-        console.error('Client upsert error:', clientErr.message);
-        return res.json({
-          success: true,
-          visitId: this.lastID,
-          warning: 'Visit created but client location was not updated.'
-        });
-      }
-      res.json({ success: true, visitId: this.lastID });
-    });
-  });
+
+  try {
+    const visitRes = await db.query(`
+      INSERT INTO visits (userName, clientName, companyName, checkInAddress, checkInMapLink, checkInTime, createdAt)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `, [userName, clientName, companyName, checkInAddress, checkInMapLink, istNow, istNow]);
+
+    const visitId = visitRes.rows[0].id;
+
+    try {
+      await db.query(`
+        INSERT INTO clients (name, company, location, createdAt)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT(name) DO UPDATE SET
+          company = excluded.company,
+          location = excluded.location
+      `, [clientName, companyName, checkInAddress, istNow]);
+    } catch (clientErr) {
+      console.error('Client upsert error:', clientErr.message);
+      return res.json({
+        success: true,
+        visitId: visitId,
+        warning: 'Visit created but client location was not updated.'
+      });
+    }
+
+    res.json({ success: true, visitId: visitId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Check-out: Update visit
-app.post('/api/visits/update', (req, res) => {
+app.post('/api/visits/update', async (req, res) => {
   const { id, checkOutAddress, checkOutMapLink, locationMismatch } = req.body;
   const istNow = getCurrentISTString();
-  db.run(`
-    UPDATE visits SET
-      checkOutTime = ?,
-      checkOutAddress = ?,
-      checkOutMapLink = ?,
-      locationMismatch = ?
-    WHERE id = ?
-  `, [istNow, checkOutAddress, checkOutMapLink, locationMismatch ? 1 : 0, id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    await db.query(`
+      UPDATE visits SET
+        checkOutTime = $1,
+        checkOutAddress = $2,
+        checkOutMapLink = $3,
+        locationMismatch = $4
+      WHERE id = $5
+    `, [istNow, checkOutAddress, checkOutMapLink, locationMismatch ? 1 : 0, id]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/visits/delete', (req, res) => {
+app.post('/api/visits/delete', async (req, res) => {
   const { id } = req.body;
-  db.run('DELETE FROM visits WHERE id = ?', [id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    await db.query('DELETE FROM visits WHERE id = $1', [id]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ============ CLIENTS API ============
 
-app.get('/api/clients', (req, res) => {
-  db.all('SELECT * FROM clients ORDER BY name', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+app.get('/api/clients', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM clients ORDER BY name');
+    res.json(rows.map(mapClient));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/clients/create', (req, res) => {
+app.post('/api/clients/create', async (req, res) => {
   const { name, company, location } = req.body;
   const istNow = getCurrentISTString();
-  db.run(`
-    INSERT INTO clients (name, company, location, createdAt) VALUES (?, ?, ?, ?)
-  `, [name, company, location, istNow], function (err) {
-    if (err) {
-      if (err.message.includes('UNIQUE')) {
-        return res.status(400).json({ error: 'Client already exists' });
-      }
-      return res.status(500).json({ error: err.message });
+  try {
+    const result = await db.query(`
+      INSERT INTO clients (name, company, location, createdAt) VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [name, company, location, istNow]);
+    res.json({ success: true, clientId: result.rows[0].id });
+  } catch (err) {
+    if (err.message.includes('unique constraint') || err.code === '23505') {
+      return res.status(400).json({ error: 'Client already exists' });
     }
-    res.json({ success: true, clientId: this.lastID });
-  });
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/clients/delete', (req, res) => {
+app.post('/api/clients/delete', async (req, res) => {
   const { name } = req.body;
-  db.run('DELETE FROM clients WHERE name = ?', [name], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    await db.query('DELETE FROM clients WHERE name = $1', [name]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ============ SETTINGS API ============
 
-app.get('/api/settings/:key', (req, res) => {
-  db.get('SELECT value FROM settings WHERE key = ?', [req.params.key], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ value: row ? row.value : null });
-  });
+app.get('/api/settings/:key', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT value FROM settings WHERE key = $1', [req.params.key]);
+    res.json({ value: rows.length > 0 ? rows[0].value : null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
   const { key, value } = req.body;
-  db.run(`
-    INSERT INTO settings (key, value) VALUES (?, ?)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `, [key, value], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    await db.query(`
+      INSERT INTO settings (key, value) VALUES ($1, $2)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `, [key, value]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ============ EMAIL REPORT ============
@@ -358,13 +435,14 @@ app.post('/api/send-report', async (req, res) => {
 
   let finalRecipientEmail = recipientEmail || email;
   if (!finalRecipientEmail && userName && userName !== 'All Users' && userName !== 'all') {
-    const user = await new Promise((resolve, reject) => {
-      db.get('SELECT reportingManagerEmail FROM users WHERE name = ?', [userName], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-    if (user) finalRecipientEmail = user.reportingManagerEmail;
+    try {
+      const { rows } = await db.query('SELECT reportingManagerEmail FROM users WHERE name = $1', [userName]);
+      if (rows.length > 0) {
+        finalRecipientEmail = rows[0].reportingManagerEmail;
+      }
+    } catch (err) {
+      console.error('Error fetching manager email:', err);
+    }
   }
   if (!finalRecipientEmail) {
     return res.status(400).json({
@@ -465,5 +543,5 @@ app.post('/api/send-report', async (req, res) => {
 const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on http://192.168.1.32:${PORT}`);
-  console.log(`📊 Database: locationTracker.db`);
+  console.log(`📊 Database: PostgreSQL`);
 });

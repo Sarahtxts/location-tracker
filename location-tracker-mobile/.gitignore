@@ -2,7 +2,7 @@
 
 # dependencies
 node_modules/
-
+.env 
 # Expo
 .expo/
 dist/
@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+google-services.json
+GoogleService-Info.plist
+credentials.json
+client_secret.json

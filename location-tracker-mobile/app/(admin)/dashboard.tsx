@@ -50,7 +50,7 @@ export default function AdminDashboard() {
             const mismatches = allVisits.filter((v: any) => !!v.locationMismatch);
 
             const today = getCurrentISTString().split(' ')[0];
-            const todayCount = allVisits.filter((v: any) => v.checkInTime.startsWith(today)).length;
+            const todayCount = allVisits.filter((v: any) => v.checkInTime && v.checkInTime.startsWith(today)).length;
 
             // Sort by checkInTime desc
             const sortedVisits = [...allVisits].sort((a: any, b: any) =>
