@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Settings, MapPin, Save, CheckCircle, Clock, Bell } from 'lucide-react';
 import { DemoDataLoader } from './DemoDataLoader';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 const PRESET_HOUR_MINUTES = [60, 120, 180, 240, 300];
 
@@ -201,7 +201,7 @@ export function AdminSettings() {
       <motion.button
         onClick={handleSave}
         whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99}}
+        whileTap={{ scale: 0.99 }}
         className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
       >
         {saved ? (
@@ -225,11 +225,10 @@ export function AdminSettings() {
             <button
               key={preset}
               onClick={() => setDistanceThreshold(preset)}
-              className={`py-3 px-4 rounded-lg border-2 transition-colors text-sm ${
-                distanceThreshold === preset
+              className={`py-3 px-4 rounded-lg border-2 transition-colors text-sm ${distanceThreshold === preset
                   ? 'border-green-600 bg-green-50 text-green-700'
                   : 'border-gray-200 bg-white text-gray-700 hover:border-green-300'
-              }`}
+                }`}
             >
               {preset}m
             </button>

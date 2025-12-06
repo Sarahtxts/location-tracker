@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { X, MapPin, Clock, AlertTriangle, Bell } from 'lucide-react';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 interface UserDashboardProps {
   userName: string;
@@ -352,16 +352,14 @@ export function UserDashboard({ userName }: UserDashboardProps) {
                 {selectedVisit.checkOutAddress && (
                   <div className="flex items-start gap-3">
                     <MapPin
-                      className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                        selectedVisit.locationMismatch ? 'text-red-500' : 'text-purple-500'
-                      }`}
+                      className={`w-5 h-5 flex-shrink-0 mt-0.5 ${selectedVisit.locationMismatch ? 'text-red-500' : 'text-purple-500'
+                        }`}
                     />
                     <div className="flex-1">
                       <p className="text-sm text-gray-500">Check-out Location</p>
                       <p
-                        className={`text-sm ${
-                          selectedVisit.locationMismatch ? 'text-red-600' : 'text-gray-900'
-                        }`}
+                        className={`text-sm ${selectedVisit.locationMismatch ? 'text-red-600' : 'text-gray-900'
+                          }`}
                       >
                         {selectedVisit.checkOutAddress}
                       </p>
@@ -417,11 +415,10 @@ export function UserDashboard({ userName }: UserDashboardProps) {
               </div>
               <div className="flex items-center justify-center pt-2">
                 <div
-                  className={`px-4 py-2 rounded-full ${
-                    selectedVisit.checkOutTime
+                  className={`px-4 py-2 rounded-full ${selectedVisit.checkOutTime
                       ? 'bg-green-100 text-green-700'
                       : 'bg-blue-100 text-blue-700'
-                  }`}
+                    }`}
                 >
                   {selectedVisit.checkOutTime ? 'Completed' : 'In Progress'}
                 </div>

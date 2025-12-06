@@ -1,6 +1,6 @@
 const http = require('http');
 
-const url = 'http://localhost:5000/api/visits';
+const url = 'http://40.192.15.217:5000/api/visits';
 
 http.get(url, (res) => {
     let data = '';

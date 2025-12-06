@@ -3,7 +3,7 @@ import { Calendar, Mail, MapPin, Clock, Search } from 'lucide-react';
 import { ExportDialog } from '../shared/ExportDialog';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 interface UserReportsProps {
   userName: string;

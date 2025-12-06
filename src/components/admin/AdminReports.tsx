@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Mail, MapPin, Clock, Filter, Search } from 'lucide-react';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 // Robust date/time conversion helper
 function getDateNum(val: string | number | null | undefined) {
@@ -244,9 +244,8 @@ export function AdminReports() {
               .map((visit) => (
                 <div
                   key={visit.id}
-                  className={`p-4 border-2 rounded-lg hover:border-green-300 transition-colors ${
-                    visit.locationMismatch ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                  }`}
+                  className={`p-4 border-2 rounded-lg hover:border-green-300 transition-colors ${visit.locationMismatch ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -258,9 +257,8 @@ export function AdminReports() {
                       <p className="text-sm text-gray-600">{visit.companyName}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className={`px-3 py-1 rounded-full text-sm ${
-                        visit.checkOutTime ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
+                      <div className={`px-3 py-1 rounded-full text-sm ${visit.checkOutTime ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
                         {visit.checkOutTime ? 'Completed' : 'In Progress'}
                       </div>
                       {visit.locationMismatch && (

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, UserPlus, Trash2, User, Shield, Smartphone, Lock, Eye, EyeOff, Mail, Edit2 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 interface UserData {
   name: string;

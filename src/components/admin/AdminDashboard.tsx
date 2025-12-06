@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Activity, AlertTriangle, X, MapPin, Clock } from 'lucide-react';
 import type { Visit } from '../../App';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 // Robust duration function
 function formatDuration(visit: Visit) {
@@ -410,9 +410,8 @@ export function AdminDashboard() {
                             <AlertTriangle className="w-3 h-3" /> Mismatch
                           </span>
                         )}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          visit.checkOutTime ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${visit.checkOutTime ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
                           {visit.checkOutTime ? 'Completed' : 'Active'}
                         </span>
                       </div>

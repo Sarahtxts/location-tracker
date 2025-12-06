@@ -7,10 +7,13 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT || 5432,
+  ssl: {
+    rejectUnauthorized: false, // REQUIRED for AWS RDS
+  }
 });
 
 pool.on('connect', () => {
-  // console.log('Connected to the PostgreSQL database');
+  console.log('Connected to AWS RDS PostgreSQL');
 });
 
 const initDb = async () => {
@@ -70,7 +73,7 @@ const initDb = async () => {
 
     console.log('✅ Database initialized (PostgreSQL)');
   } catch (err) {
-    console.error('Error initializing database:', err);
+    console.error('❌ Error initializing database:', err);
   } finally {
     client.release();
   }
@@ -79,8 +82,5 @@ const initDb = async () => {
 initDb();
 
 module.exports = {
-  query: (text, params) => {
-    console.log('Executing query:', { text, params });
-    return pool.query(text, params);
-  },
+  query: (text, params) => pool.query(text, params),
 };

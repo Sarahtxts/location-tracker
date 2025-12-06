@@ -8,6 +8,8 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+location-tracker-backend/.env
+location-tracker-backend/node_modules/
 
 # Native
 .kotlin/

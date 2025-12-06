@@ -4,7 +4,7 @@ import { LogIn, LogOut as LogOutIcon } from 'lucide-react';
 import type { Visit } from '../../App';
 import { MapView } from '../shared/MapView'; // Adjust path as needed
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 interface UserCheckInProps {
   userName: string;
@@ -112,7 +112,7 @@ export function UserCheckIn({ userName }: UserCheckInProps) {
           console.log(`Setting address: ${addr}`);
           setAddress(addr);
           // persist as manual selection so other flows can use it
-          try { localStorage.setItem('locationTracker_manualLocation', JSON.stringify({ lat, lng, address: addr })); } catch (e) {}
+          try { localStorage.setItem('locationTracker_manualLocation', JSON.stringify({ lat, lng, address: addr })); } catch (e) { }
         } catch (error) {
           console.error('Error processing location:', error);
           setLocationError('Failed to process location data');
@@ -145,7 +145,7 @@ export function UserCheckIn({ userName }: UserCheckInProps) {
       console.log(`Geocoding request: lat=${lat}, lng=${lng}`);
       const response = await fetch(`${API_URL}/api/geocode?lat=${lat}&lng=${lng}`);
       console.log(`Geocoding response status: ${response.status}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log(`Geocoding result: ${data.address}`);

@@ -2,20 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Download, Mail, CheckCircle } from 'lucide-react';
 
-interface Visit {
-  id: number;
-  userName: string;
-  clientName: string;
-  companyName: string;
-  checkInAddress: string;
-  checkInMapLink?: string;
-  checkInTime: string | number;
-  checkOutTime?: string | number | null;
-  checkOutAddress?: string | null;
-  checkOutMapLink?: string | null;
-  locationMismatch?: number | boolean;
-  createdAt: string;
-}
+import { Visit } from '../../App';
 
 interface ExportDialogProps {
   visits: Visit[];
@@ -334,18 +321,18 @@ export function ExportDialog({ visits, userName, exportType, onClose }: ExportDi
                     <span className="text-gray-900">
                       {visits.length > 0
                         ? `${new Date(
-                            Math.min(...visits.map(v =>
-                              typeof v.checkInTime === 'string'
-                                ? new Date(v.checkInTime.replace(' ', 'T')).getTime()
-                                : v.checkInTime
-                            ))
-                          ).toLocaleDateString()} - ${new Date(
-                            Math.max(...visits.map(v =>
-                              typeof v.checkInTime === 'string'
-                                ? new Date(v.checkInTime.replace(' ', 'T')).getTime()
-                                : v.checkInTime
-                            ))
-                          ).toLocaleDateString()}`
+                          Math.min(...visits.map(v =>
+                            typeof v.checkInTime === 'string'
+                              ? new Date(v.checkInTime.replace(' ', 'T')).getTime()
+                              : v.checkInTime
+                          ))
+                        ).toLocaleDateString()} - ${new Date(
+                          Math.max(...visits.map(v =>
+                            typeof v.checkInTime === 'string'
+                              ? new Date(v.checkInTime.replace(' ', 'T')).getTime()
+                              : v.checkInTime
+                          ))
+                        ).toLocaleDateString()}`
                         : 'N/A'}
                     </span>
                   </p>

@@ -4,7 +4,7 @@ import {
   Smartphone, Lock, CheckCircle, Eye, EyeOff, Mail
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://40.192.15.217:5000';
 
 interface UserSettingsProps {
   userName: string;
@@ -184,11 +184,10 @@ export function UserSettings({ userName, userRole }: UserSettingsProps) {
               onChange={e => setPhoneNumber(e.target.value)}
               placeholder="+91 9876543210"
               disabled={userRole !== 'admin'}
-              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
-                userRole === 'admin'
+              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${userRole === 'admin'
                   ? 'focus:ring-blue-500 focus:border-transparent'
                   : 'bg-gray-100 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             />
             <p className="text-sm text-gray-500 mt-2">
               Only admin can change the phone number.
@@ -204,11 +203,10 @@ export function UserSettings({ userName, userRole }: UserSettingsProps) {
               onChange={e => setReportingManagerEmail(e.target.value)}
               placeholder="manager@email.com"
               disabled={userRole !== 'admin'}
-              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
-                userRole === 'admin'
+              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${userRole === 'admin'
                   ? 'focus:ring-green-500 focus:border-transparent'
                   : 'bg-gray-100 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             />
             <p className="text-sm text-gray-500 mt-2">
               {userRole === 'admin'
@@ -302,13 +300,12 @@ export function UserSettings({ userName, userRole }: UserSettingsProps) {
             disabled={!currentPassword || !newPassword || !confirmPassword || loading}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-              currentPassword && newPassword && confirmPassword && !loading
+            className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${currentPassword && newPassword && confirmPassword && !loading
                 ? userRole === 'admin'
                   ? 'bg-green-600 hover:bg-green-700'
                   : 'bg-blue-500 hover:bg-blue-600'
                 : 'bg-gray-300 cursor-not-allowed'
-            } text-white`}
+              } text-white`}
           >
             {passwordSaved ? (
               <>
