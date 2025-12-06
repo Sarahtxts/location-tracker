@@ -1,10 +1,16 @@
 import { Stack } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
 import { AuthProvider } from '../utils/AuthContext';
+import { API_URL } from '../services/api';
 import { lightTheme } from '../constants/theme';
 
 export default function RootLayout() {
+    useEffect(() => {
+        console.log("🚀 ROOT LAYOUT MOUNTED. API URL:", API_URL);
+    }, []);
+
     return (
         <SafeAreaProvider>
             <PaperProvider theme={lightTheme}>

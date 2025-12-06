@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Backend API URL - Using local network IP for mobile connectivity
-// Your computer's IP: 192.168.1.32
-const API_URL = 'http://40.192.15.217:5000';
+// Backend API URL - Hardcoded for reliability
+export const API_URL = 'http://40.192.15.217:5000';
+
+console.log("USING API URL FROM api.ts:", API_URL);
 
 export const api = axios.create({
     baseURL: API_URL,
