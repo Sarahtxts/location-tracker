@@ -61,6 +61,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Location Tracker to use your location for check-ins and check-outs."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "extra": {

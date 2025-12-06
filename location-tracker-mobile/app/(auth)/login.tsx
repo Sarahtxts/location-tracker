@@ -66,9 +66,11 @@ export default function LoginScreen() {
             }
         } catch (error: any) {
             console.error('Login error:', error);
+            const errorMessage = error.message || 'Unknown error';
+            const errorStatus = error.response ? `Status: ${error.response.status}` : '';
             Alert.alert(
                 'Connection Error',
-                'Cannot connect to server. Make sure the backend is running and you are on the same network.'
+                `Cannot connect to server.\nError: ${errorMessage}\n${errorStatus}\nMake sure the backend is running and reachable.`
             );
         } finally {
             setLoading(false);
